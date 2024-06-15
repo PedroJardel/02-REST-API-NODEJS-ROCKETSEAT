@@ -4,6 +4,23 @@ import { knex } from '../database'
 import { randomUUID } from 'crypto'
 
 export async function transactionsRoutes(server: FastifyInstance) {
+  server.get('/', async () => {
+    const transactions = await knex('transactions').select()
+
+    return { transactions }
+  })
+
+  server.get('/:id', async (req) => {
+    const getTransactionParamsSchema = z.object({
+      id: z.string().uuid(),
+    })
+    const { id } = getTransactionParamsSchema.parse(req.params)
+
+    const transactions = await knex('transactions').where('id', id).first()
+
+    return { transactions }
+  })
+
   server.post('/', async (req, res) => {
     const createTransactionBodySchema = z.object({
       title: z.string(),
@@ -20,11 +37,5 @@ export async function transactionsRoutes(server: FastifyInstance) {
     })
 
     return res.status(201).send()
-  })
-
-  server.get('/', async () => {
-    const transactions = await knex('transactions').select('*')
-
-    return transactions
   })
 }
