@@ -7,12 +7,15 @@ import { checkSessionIdExists } from '../middlewares/check-session-id-exists'
 // Coockies <-> Formas da gente manter contexto entre requisições
 
 export async function transactionsRoutes(server: FastifyInstance) {
+  server.addHook('preHandler', async (req) => {
+    console.log(`[${req.method}] ${req.url}`)
+  })
   server.get(
     '/',
     {
       preHandler: [checkSessionIdExists],
     },
-    async (req, res) => {
+    async (req) => {
       const { sessionId } = req.cookies
       const transactions = await knex('transactions')
         .where('session_id', sessionId)
