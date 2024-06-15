@@ -7,9 +7,7 @@ import { checkSessionIdExists } from '../middlewares/check-session-id-exists'
 // Coockies <-> Formas da gente manter contexto entre requisições
 
 export async function transactionsRoutes(server: FastifyInstance) {
-  server.addHook('preHandler', async (req) => {
-    console.log(`[${req.method}] ${req.url}`)
-  })
+  //   server.addHook('preHandler', checkSessionIdExists)
   server.get(
     '/',
     {
@@ -61,37 +59,29 @@ export async function transactionsRoutes(server: FastifyInstance) {
       return { summary }
     },
   )
-  server.post(
-    '/',
-    {
-      preHandler: [checkSessionIdExists],
-    },
-    async (req, res) => {
-      const createTransactionBodySchema = z.object({
-        title: z.string(),
-        amount: z.number(),
-        type: z.enum(['credit', 'debit']),
-      })
+  server.post('/', async (req, res) => {
+    const createTransactionBodySchema = z.object({
+      title: z.string(),
+      amount: z.number(),
+      type: z.enum(['credit', 'debit']),
+    })
 
-      const { title, amount, type } = createTransactionBodySchema.parse(
-        req.body,
-      )
+    const { title, amount, type } = createTransactionBodySchema.parse(req.body)
 
-      const sessionId = req.cookies.sessionId ?? randomUUID()
+    const sessionId = req.cookies.sessionId ?? randomUUID()
 
-      res.cookie('sessionId', sessionId, {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      })
+    res.cookie('sessionId', sessionId, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    })
 
-      await knex('transactions').insert({
-        id: randomUUID(),
-        title,
-        amount: type === 'credit' ? amount : amount * -1,
-        session_id: sessionId,
-      })
+    await knex('transactions').insert({
+      id: randomUUID(),
+      title,
+      amount: type === 'credit' ? amount : amount * -1,
+      session_id: sessionId,
+    })
 
-      return res.status(201).send()
-    },
-  )
+    return res.status(201).send()
+  })
 }
